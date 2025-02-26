@@ -7,8 +7,6 @@ Panels:
         - /Global Options1
         - /Status1
         - /Map1/Topic1
-        - /Map2
-        - /Marker1
       Splitter Ratio: 0.5
     Tree Height: 549
   - Class: rviz_common/Selection
@@ -194,20 +192,29 @@ Visualization Manager:
         Value: /global_costmap/costmap_updates
       Use Timestamp: false
       Value: true
-    - Class: rviz_default_plugins/Marker
+    - Class: rviz_default_plugins/MarkerArray
       Enabled: true
-      Name: Marker
+      Name: MarkerArray
       Namespaces:
-        checkpoint_labels: true
-        checkpoint_markers: true
-        goal_markers: true
+        trajectory: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
-        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /visualization_marker
+        Value: /trajectory_markers
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        trajectory_visualization: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /trajectory_visualization
       Value: true
   Enabled: true
   Global Options:
@@ -264,7 +271,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 45.974403381347656
+      Scale: 47.1995964050293
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
       X: 0
@@ -286,5 +293,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 70
-  Y: 60
+  X: 2593
+  Y: 106
