@@ -67,16 +67,16 @@ ros2 run rmw_zenoh_cpp rmw_zenohd
 ### 2. Launch Core System
 ```bash
 # Terminal 1: Launch simulation and robot
-ros2 launch accl_task launch_sim.launch.py
+ros2 launch anscer_task launch_sim.launch.py
 
 # Terminal 2: Launch localization
-ros2 launch accl_task localization_launch.py map:=./src/accl_task/maps/warehouse_save.yaml use_sim_time:=true
+ros2 launch anscer_task localization_launch.py map:=./src/anscer_task/maps/warehouse_save.yaml use_sim_time:=true
 
 # Terminal 3: Launch custom navigation
 ros2 launch my_bot navigation_launch.py use_sim_time:=false map_subscribe_transient_local:=true
 
 # Terminal 4: Run custom navigation node
-ros2 run accl_task navigation_node
+ros2 run anscer_task navigation_node
 ```
 ## Launch Files and Navigation Node Explained
 
@@ -141,7 +141,7 @@ Fine tuned to match environmental constraints and robot capabilities
 ### Building and Testing
 ```bash
 # Build specific packages
-colcon build --packages-select accl_task or colcon build --symlink-install
+colcon build --packages-select anscer_task or colcon build --symlink-install
 
 ## Common Issues and Solutions
 

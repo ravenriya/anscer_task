@@ -59,8 +59,8 @@
 
     <gazebo>
         <plugin name="ign_ros2_control::IgnitionROS2ControlPlugin" filename="ign_ros2_control-system">
-            <parameters>$(find accl_task)/config/my_controllers.yaml</parameters>
-            <parameters>$(find accl_task)/config/gaz_ros2_ctl_use_sim.yaml</parameters>
+            <parameters>$(find anscer_task)/config/my_controllers.yaml</parameters>
+            <parameters>$(find anscer_task)/config/gaz_ros2_ctl_use_sim.yaml</parameters>
         </plugin>
     </gazebo>
 
