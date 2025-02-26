@@ -1,0 +1,7 @@
+#Request
+string filename
+float32 duration  # Duration in seconds to save
+---
+#Response
+bool success
+string message
