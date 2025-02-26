@@ -1,7 +1,6 @@
 # Custom robot with Nav2
 
-A ROS 2 based robot featuring custom navigation nodes and optimized parameters for autonomous operation done using Zenoh middleware, can also be simulated using cycloneDDS, PLEASE NOTE THAT fastDDS makes the gazebo environment crash
-
+A ROS 2 based robot featuring navigation with optimized parameters for autonomous operation done using Zenoh middleware, can also be simulated using cycloneDDS, PLEASE NOTE THAT fastDDS makes the gazebo environment crash
 
 ## Prerequisites
 
@@ -23,20 +22,22 @@ sudo apt install -y \
     ros-humble-slam-toolbox \
     ros-humble-controller-manager \
     ros-humble-ros2-control \
-    ros-humble-ros2-controllers \
+    ros-humble-ros2-controllers
 ```
+
+```bash
 # Install Gazebo Ignition-Fortress
 sudo apt-get install ignition-fortress
-
+```
 
 ## System Components
 
-### 1. Custom Navigation Node
-The specialized navigation implementation includes:
-- Enhanced path planning algorithms
-- Custom cost functions
+### 1. Navigation System
+The navigation system includes:
+- Enhanced path planning algorithms using Nav2
 - Optimized obstacle avoidance
 - Real-time path optimization
+- Parameter-tuned controllers
 
 ### 2. Simulation Environment
 Fully integrated Gazebo simulation with:
@@ -51,11 +52,12 @@ Map-based positioning system using:
 - Custom map integration
 - Real-time position tracking
 
-### 3. Navigation System using Nav2
-Map-based navigation system using:
-- AMCL localization
-- Map integration
-- Real-time dynamic obstacle avoidance
+### 4. Trajectory Tracking System
+Complete trajectory recording and visualization:
+- Real-time trajectory recording (TrajectoryPublisher)
+- Trajectory data saving to CSV files
+- Trajectory visualization with markers
+- Trajectory playback from saved files (TrajectoryReader)
 
 ## Running the Complete System
 
@@ -67,18 +69,37 @@ ros2 run rmw_zenoh_cpp rmw_zenohd
 ### 2. Launch Core System
 ```bash
 # Terminal 1: Launch simulation and robot
-ros2 launch accl_task launch_sim.launch.py
+ros2 launch anscer_task launch_sim.launch.py
 
-# Terminal 2: Launch localization
-ros2 launch accl_task localization_launch.py map:=./src/accl_task/maps/warehouse_save.yaml use_sim_time:=true
+# Terminal 2: Launch RViz2 with configuration
+rviz2 -d src/anscer_task/config/view_bot.rviz
 
-# Terminal 3: Launch custom navigation
-ros2 launch my_bot navigation_launch.py use_sim_time:=false map_subscribe_transient_local:=true
+# Terminal 3: Launch localization
+ros2 launch anscer_task localization_launch.py map:=./src/anscer_task/maps/warehouse_save.yaml use_sim_time:=true
 
-# Terminal 4: Run custom navigation node
-ros2 run accl_task navigation_node
+# Terminal 4: Launch navigation
+ros2 launch anscer_task navigation_launch.py use_sim_time:=true map_subscribe_transient_local:=true
 ```
-## Launch Files and Navigation Node Explained
+
+### 3. Start Trajectory Recording
+```bash
+# Terminal 5: Run trajectory publisher node
+ros2 run anscer_task trajectory_publisher #make sure you run this node while running the navigation stack and the fixed frame is set to map
+```
+
+### 4. Save Trajectory Data (when needed)
+```bash
+# Terminal 6: Save the trajectory data for the last 300 seconds to a file
+ros2 service call /save_trajectory anscer_task/srv/SaveTrajectory "{filename: 'trajectory.csv', duration: 300.0}" #both file name and duration can be changed
+```
+
+### 5. Replay Saved Trajectory (optional)
+```bash
+# Terminal 6 or 7: Run trajectory reader node to visualize the saved trajectory
+ros2 run anscer_task trajectory_reader #change the fixed frame to odom frame
+```
+
+## Launch Files Explained
 
 ### launch_sim.launch.py
 Launches simulation components:
@@ -95,53 +116,72 @@ Initiates localization:
 
 ### navigation_launch.py
 Starts navigation stack:
-- Custom navigation node
 - Parameter loading
 - Path planning
 - Obstacle avoidance
 
-### navigation_node.cpp
-- Interfaces with running AMCL node and sets initial pose
-- Interfaces with Running Nav2 nodes and gives coordinates for the robot to traverse through
-- Adds visual markers after reaching a goal
+## Trajectory System
 
-## Configuration Files
+### Service Definition
+The trajectory system uses a custom service to save trajectory data:
+- **File location**: `srv/SaveTrajectory.srv`
+- **Contents**:
+  ```
+  # Request
+  string filename
+  float32 duration  # Duration in seconds to save
+  ---
+  # Response
+  bool success
+  string message
+  ```
 
-### nav_params.yaml
-Optimized Configuration
-The optimized configuration uses MPPI controller (nav2_mppi_controller::MPPIController), whereas the default uses the DWB controller (dwb_core::DWBLocalPlanner). The MPPI controller implements Model Predictive Path Integral control, which provides more advanced trajectory planning and obstacle avoidance capabilities.
-The optimized configuration includes both precise_goal_checker and general_goal_checker, while the default only has general_goal_checker. The precise goal checker has tighter tolerances (0.1m for both position and orientation) compared to the default's 0.25m tolerances, allowing for more accurate positioning at the destination.
-MPPI Controller Specific Parameters
-The optimized configuration includes numerous MPPI-specific parameters that significantly enhance navigation performance:
+### Trajectory System Nodes
 
-Time steps of 56 and model time step of 0.05 seconds for trajectory prediction
-Large batch size of 2000 for thorough trajectory evaluation
-Appropriate noise parameters for trajectory sampling
-Higher maximum velocity (0.5 m/s compared to default 0.26 m/s)
-Well-tuned acceleration limits for smoother motion
-Optimization parameters like temperature (0.3) and gamma (0.015)
-Specialized critics including ConstraintCritic, CostCritic, GoalCritic, GoalAngleCritic, PathAlignCritic, PathFollowCritic, PathAngleCritic, and PreferForwardCritic
-High collision cost (1,000,000) for safer navigation
+### TrajectoryPublisher Node
+Functionality:
+- Records robot's path in real-time using TF transforms
+- Visualizes the trajectory with red line markers in RViz
+- Saves trajectory data to CSV files via service calls
+- Configurable sampling rate (default: 10Hz)
 
-Planner Server
-A key difference in the optimized configuration is enabling A* algorithm for path planning (use_astar: true), whereas the default uses Dijkstra's algorithm (use_astar: false). A* can provide more efficient path planning in complex environments by using heuristics to guide the search, potentially resulting in faster path computation and better routes.
+Service Interface:
+- `/save_trajectory` service (anscer_task/srv/SaveTrajectory)
+- Parameters:
+  - `filename`: Path to save the CSV file
+  - `duration`: Optional time window for saving in seconds (300.0 = save last 5 minutes)
+- Service Definition (srv/SaveTrajectory.srv):
+  ```
+  # Request
+  string filename
+  float32 duration  # Duration in seconds to save
+  ---
+  # Response
+  bool success
+  string message
+  ```
 
-Key Advantages of the Optimized Configuration
-More intelligent path planning with A* algorithm, which can find optimal paths more efficiently than Dijkstra's algorithm in complex environments
-Advanced controller implementation using MPPI, which provides better handling of dynamic obstacles, more sophisticated trajectory generation, and smoother motion planning through its predictive capabilities
-Higher performance capabilities with faster maximum velocity (0.5 m/s vs 0.26 m/s) and better acceleration handling
-More precise final positioning with tighter goal tolerances and balanced approach behavior
-Enhanced path following behavior with specialized critics that maintain a better balance between staying on the planned path and adapting to environmental changes
-Improved safety through higher collision costs and more sophisticated obstacle avoidance through the predictive capabilities of MPPI
-Better computational efficiency through batch processing for trajectory evaluation, appropriate pruning distance, and efficient update parameters
-Fine tuned to match environmental constraints and robot capabilities
+### TrajectoryReader Node
+Functionality:
+- Loads saved trajectory data from CSV files
+- Transforms and visualizes the trajectory in the odom frame
+- Displays the trajectory with blue line markers in RViz
+- Configurable publishing rate
+
+Parameters:
+- `trajectory_file`: Path to the CSV file (default: "trajectory.csv")
+- `publish_rate`: Frequency of visualization updates in Hz (default: 1.0)
 
 ## Development Tools
 
 ### Building and Testing
 ```bash
 # Build specific packages
-colcon build --packages-select accl_task or colcon build --symlink-install
+colcon build --packages-select anscer_task
+
+# Build with symlink install
+colcon build --symlink-install
+```
 
 ## Common Issues and Solutions
 
@@ -160,3 +200,14 @@ colcon build --packages-select accl_task or colcon build --symlink-install
    - Confirm use_sim_time settings
    - Check Gazebo launch
    - Verify sensor data
+
+### Trajectory System Issues
+1. **Trajectory Not Visualizing**
+   - Check TF transformations (map → odom → base_link)
+   - Verify RViz is subscribed to the marker topics
+   - Confirm marker scale and color settings
+
+2. **CSV File Issues**
+   - Ensure write permissions for the save directory
+   - Check CSV format compatibility
+   - Verify timestamp format in saved files
